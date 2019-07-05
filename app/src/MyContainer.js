@@ -4,7 +4,7 @@ import { drizzleConnect } from "drizzle-react";
 const mapStateToProps = state => {
   return {
     accounts: state.accounts,
-    TokenGenerator: state.contracts.TokenGenerator,
+    ZastrinToken: state.contracts.ZastrinToken,
     drizzleStatus: state.drizzleStatus,
   };
 };

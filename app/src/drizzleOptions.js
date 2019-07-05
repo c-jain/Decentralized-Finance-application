@@ -1,4 +1,4 @@
-import TokenGenerator from "./contracts/TokenGenerator.json";
+import ZastrinToken from "./contracts/ZastrinToken.json";
 
 const options = {
   web3: {
@@ -8,9 +8,9 @@ const options = {
       url: "ws://127.0.0.1:8545",
     },
   },
-  contracts: [TokenGenerator],
+  contracts: [ZastrinToken],
   events: {
-    TokenGenerator: ["Generated"],
+    ZastrinToken: ["ZastrinTokenMinted"],
   },
   polls: {
     accounts: 1500,

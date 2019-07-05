@@ -1,0 +1,20 @@
+let instance1 = TokenGenerator.deployed()
+let instance2 = Bank.deployed()
+
+await instance1.tokenGenerator(2, {from: 'address1', value: 2})
+await instance1.approve('Bank Address', 100, {from: 'address1'})
+
+// lending proposal
+await instance2.createProposal(web3.utils.asciiToHex('Lend'), 1, 1, 100, 10, {from: 'address1'})
+
+// accepting above proposal
+await instance.concludeProposal(0, {from: 'address2', value: 10})
+
+// get array of proposals
+let list = await instance2.getProposals.call()
+
+// paying monthly loan payment
+await instance1.tokengenerator(1, {from: 'address2', value: 1})
+await instance1.approve('Bank address', 10, {from: 'address2'})
+await instance2.payInterest(0, {from: 'address2'})
+
