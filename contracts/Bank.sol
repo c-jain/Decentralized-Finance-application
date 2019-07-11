@@ -105,15 +105,18 @@ contract Bank {
 
     // Function to pay monthly loan
     function payInterest(uint _id) public onlyValidProposal(_id) returns (bool) {
+
+        require(Proposals[_id].status == Status.Accepted, "You cann't pay for this proposal");
+
         require(msg.sender == Proposals[_id].borrower, 'You are not suppose to pay!');
 
         require(Proposals[_id].totalMonthlyPaymentCompleted < Proposals[_id].duration, 'You completed all monthly loan payments!');
 
-        uint amountToPay = Proposals[_id].amount * Proposals[_id].interest;  // We do not divide it by 100 here
-        require(token.allowance(msg.sender, address(this)) >= amountToPay * 10**(decimals - 100), 'Allow bank to deduct interest amount!');
+        // We do not divide it by 100 instead multiply by 10^(18-2)
+        uint amountToPay = (Proposals[_id].amount * Proposals[_id].interest)*(10**(decimals - 2));
+        require(token.allowance(msg.sender, address(this)) >= amountToPay, 'Allow bank to deduct interest amount!');
 
-        require(token.transferFrom(msg.sender, Proposals[_id].lender, amountToPay * 10**(decimals - 100)),
-                'Problem in transfering the monthly loan payment!');
+        require(token.transferFrom(msg.sender, Proposals[_id].lender, amountToPay), 'Problem in transfering the monthly loan payment!');
 
         Proposals[_id].totalMonthlyPaymentCompleted += 1;
         return true;
@@ -153,7 +156,7 @@ contract Bank {
 
         // liquidate
         uint generatedTokens = token.mintTokens.value(Proposals[_id].collateralAmount * 1 ether)(Proposals[_id].collateralAmount * 1 ether);
-        token.transfer(Proposals[_id].lender, generatedTokens);
+        require(token.transfer(Proposals[_id].lender, generatedTokens), 'Problem in liqidating!');
 
         // Updating status
         Proposals[_id].status = Status.Completed;
@@ -166,9 +169,17 @@ contract Bank {
         require(Proposals[_id].status == Status.Unaccepted, "You cann't delete this proposal");
 
         if(Proposals[_id].proposalType == ProposalType.Lending) {
+
             require(Proposals[_id].lender == msg.sender, 'You are not allowed to delete this proposal');
+
+            require(token.transfer(msg.sender, Proposals[_id].amount * 10**decimals), 'Unsuccessfull! Problem in deleting proposal');
+
         } else if(Proposals[_id].proposalType == ProposalType.Borrowing) {
+
             require(Proposals[_id].borrower == msg.sender, 'You are not allowed to delete this proposal');
+
+            address payable Borrower = address(uint160(Proposals[_id].borrower));
+            Borrower.transfer(Proposals[_id].collateralAmount * 1 ether);
         }
 
         Proposals[_id].status = Status.Deleted;
