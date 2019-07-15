@@ -13,14 +13,14 @@ contract ZastrinToken is ERC20, ERC20Detailed {
     }
 
     function mintTokens(uint value) public payable returns (uint){
-        require(msg.value == (value * 1 ether), "Please send entered amount!");
-            
-        uint amountToBeMinted = msg.value.div(tokenPrice);
-        uint decimals = decimals();
+        require(msg.value == value, "Please send entered amount!");
 
-        _mint(msg.sender, amountToBeMinted * 10**decimals);
-        emit ZastrinTokenMinted(msg.sender, amountToBeMinted * 10**decimals);
-        return amountToBeMinted * 10**decimals;
+        uint decimals = decimals();
+        uint amountToBeMinted = value.div(tokenPrice) * 10**decimals;
+
+        _mint(msg.sender, amountToBeMinted);
+        emit ZastrinTokenMinted(msg.sender, amountToBeMinted);
+        return amountToBeMinted;
     }
 
     event ZastrinTokenMinted(address indexed to, uint amount);

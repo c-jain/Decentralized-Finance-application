@@ -28,12 +28,10 @@ contract Bank {
     ZastrinToken public token;
     uint public Id;  // Id for proposals
     Proposal[] Proposals;  // List of all proposals
-    uint decimals; // No. of decimals
 
     constructor(address _tokenAddress, uint _id) public {
         token = ZastrinToken(_tokenAddress);
         Id = _id;
-        decimals = token.decimals();
     }
 
     // Getter function for Proposals
@@ -54,16 +52,16 @@ contract Bank {
 
         if(_type == 'lending') {
 
-            require(token.allowance(msg.sender, address(this)) >= _amount * 10**decimals, 'Allow bank to deduct lending amount');
+            require(token.allowance(msg.sender, address(this)) >= _amount, 'Allow bank to deduct lending amount');
 
-            require(token.transferFrom(msg.sender, address(this), _amount * 10**decimals), "Problem in depositing lending amount!");
+            require(token.transferFrom(msg.sender, address(this), _amount), "Problem in depositing lending amount!");
 
             Proposals.push(Proposal(ProposalType.Lending, Status.Unaccepted, _duration, _interest, _amount,
                                         _collateralAmount, Id++, 0, 0, msg.sender, address(0)));
 
         } else if(_type == 'borrowing') {
 
-            require(msg.value == _collateralAmount * 1 ether, "Send entered amount");
+            require(msg.value == _collateralAmount, "Send entered amount");
 
             Proposals.push(Proposal(ProposalType.Borrowing, Status.Unaccepted, _duration, _interest, _amount,
                                         _collateralAmount, Id++, 0, 0, address(0), msg.sender));
@@ -79,9 +77,9 @@ contract Bank {
 
             require(msg.sender != Proposals[_id].lender, "You can not accept your own proposal");
 
-            require(msg.value == Proposals[_id].collateralAmount * 1 ether, "Transfered collateral is unacceptable");
+            require(msg.value == Proposals[_id].collateralAmount, "Transfered collateral is unacceptable");
 
-            require(token.transfer(msg.sender, Proposals[_id].amount * 10**decimals), "Problem in transfering lending amount!");
+            require(token.transfer(msg.sender, Proposals[_id].amount), "Problem in transfering lending amount!");
 
             Proposals[_id].borrower = msg.sender;  // Updating borrower
 
@@ -89,9 +87,9 @@ contract Bank {
 
             require(msg.sender != Proposals[_id].borrower, "You can not accept your own proposal");
 
-            require(token.allowance(msg.sender, address(this)) >= Proposals[_id].amount * 10**decimals, 'Allow bank to deduct lending amount');
+            require(token.allowance(msg.sender, address(this)) >= Proposals[_id].amount, 'Allow bank to deduct lending amount');
 
-            require(token.transferFrom(msg.sender, Proposals[_id].borrower, Proposals[_id].amount * 10**decimals), "Problem in transfering lending amount!");
+            require(token.transferFrom(msg.sender, Proposals[_id].borrower, Proposals[_id].amount), "Problem in transfering lending amount!");
 
             Proposals[_id].lender = msg.sender;  // Updating lender
         }
@@ -112,8 +110,7 @@ contract Bank {
 
         require(Proposals[_id].totalMonthlyPaymentCompleted < Proposals[_id].duration, 'You completed all monthly loan payments!');
 
-        // We do not divide it by 100 instead multiply by 10^(18-2)
-        uint amountToPay = (Proposals[_id].amount * Proposals[_id].interest)*(10**(decimals - 2));
+        uint amountToPay = (Proposals[_id].amount * Proposals[_id].interest) / 100;
         require(token.allowance(msg.sender, address(this)) >= amountToPay, 'Allow bank to deduct interest amount!');
 
         require(token.transferFrom(msg.sender, Proposals[_id].lender, amountToPay), 'Problem in transfering the monthly loan payment!');
@@ -131,13 +128,12 @@ contract Bank {
 
         require(Proposals[_id].totalMonthlyPaymentCompleted == Proposals[_id].duration, 'First complete your remaining monthly loan payments');
 
-        require(token.allowance(msg.sender, address(this)) >= Proposals[_id].amount * 10**decimals, 'Allow bank to deduct lending amount!');
+        require(token.allowance(msg.sender, address(this)) >= Proposals[_id].amount, 'Allow bank to deduct lending amount!');
 
-        require(token.transferFrom(msg.sender, Proposals[_id].lender, Proposals[_id].amount * 10**decimals),
-                                   "Problem in transfering the lending amount!");
+        require(token.transferFrom(msg.sender, Proposals[_id].lender, Proposals[_id].amount), "Problem in transfering the lending amount!");
 
         address payable Borrower = address(uint160(Proposals[_id].borrower));
-        Borrower.transfer(Proposals[_id].collateralAmount * 1 ether);
+        Borrower.transfer(Proposals[_id].collateralAmount);
 
         // Updating status
         Proposals[_id].status = Status.Completed;
@@ -155,7 +151,7 @@ contract Bank {
                 "You cann't liquidate now!");
 
         // liquidate
-        uint generatedTokens = token.mintTokens.value(Proposals[_id].collateralAmount * 1 ether)(Proposals[_id].collateralAmount * 1 ether);
+        uint generatedTokens = token.mintTokens.value(Proposals[_id].collateralAmount)(Proposals[_id].collateralAmount);
         require(token.transfer(Proposals[_id].lender, generatedTokens), 'Problem in liqidating!');
 
         // Updating status
@@ -172,14 +168,14 @@ contract Bank {
 
             require(Proposals[_id].lender == msg.sender, 'You are not allowed to delete this proposal');
 
-            require(token.transfer(msg.sender, Proposals[_id].amount * 10**decimals), 'Unsuccessfull! Problem in deleting proposal');
+            require(token.transfer(msg.sender, Proposals[_id].amount), 'Unsuccessfull! Problem in deleting proposal');
 
         } else if(Proposals[_id].proposalType == ProposalType.Borrowing) {
 
             require(Proposals[_id].borrower == msg.sender, 'You are not allowed to delete this proposal');
 
             address payable Borrower = address(uint160(Proposals[_id].borrower));
-            Borrower.transfer(Proposals[_id].collateralAmount * 1 ether);
+            Borrower.transfer(Proposals[_id].collateralAmount);
         }
 
         Proposals[_id].status = Status.Deleted;
@@ -200,13 +196,13 @@ contract Bank {
 
             if(_amount > Proposals[_id].amount) {
 
-                require(token.allowance(msg.sender, address(this)) >= (_amount - Proposals[_id].amount) * 10**decimals, 'Allow bank to deduct extra lending amount');
+                require(token.allowance(msg.sender, address(this)) >= (_amount - Proposals[_id].amount), 'Allow bank to deduct extra lending amount');
 
-                require(token.transferFrom(msg.sender, address(this),(_amount - Proposals[_id].amount) * 10**decimals), "Problem in depositing extra lending amount!");
+                require(token.transferFrom(msg.sender, address(this),_amount - Proposals[_id].amount), "Problem in depositing extra lending amount!");
 
             } else if(_amount < Proposals[_id].amount) {
 
-                token.transfer(msg.sender, (Proposals[_id].amount - _amount) * 10**decimals);
+                token.transfer(msg.sender, Proposals[_id].amount - _amount);
             }
             Proposals[_id].amount = _amount;
 
@@ -220,11 +216,11 @@ contract Bank {
 
             if(_collateralAmount < Proposals[_id].collateralAmount) {
 
-                msg.sender.transfer((Proposals[_id].collateralAmount - _collateralAmount) * 1 ether);
+                msg.sender.transfer((Proposals[_id].collateralAmount - _collateralAmount));
 
             } else if(_collateralAmount > Proposals[_id].collateralAmount) {
 
-                require(msg.value == (_collateralAmount - Proposals[_id].collateralAmount) * 1 ether, 'Send extra collateral amount');
+                require(msg.value == (_collateralAmount - Proposals[_id].collateralAmount), 'Send extra collateral amount');
             }
             Proposals[_id].collateralAmount = _collateralAmount;
         }

@@ -1,23 +1,44 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, withRouter } from 'react-router-dom';
 import { Drizzle, generateStore } from 'drizzle';
 import { DrizzleContext } from 'drizzle-react';
 
 import options from './drizzleOptions';
+
 import './index.css';
-import App from './App';
+import App from './Components/App';
 import * as serviceWorker from './serviceWorker';
 
 const drizzleStore = generateStore(options);
 const drizzle = new Drizzle(options, drizzleStore);
 
+const Main = withRouter(props => ((
+  <DrizzleContext.Consumer>
+    {drizzleContext => {
+      const { drizzle, drizzleState, initialized } = drizzleContext;
 
+      if (!initialized) {
+        return "Loading...";
+      }
+
+      return (
+        <div>
+            <App 
+              drizzle={drizzle}
+              drizzleState={drizzleState}
+              {...props}
+            />            
+        </div>
+      );
+    }}
+  </DrizzleContext.Consumer>
+)));
 
 ReactDOM.render(
       <DrizzleContext.Provider drizzle={drizzle}>
         <BrowserRouter>
-          <App />
+          <Main />
         </BrowserRouter>    
       </DrizzleContext.Provider>
       ,document.getElementById('root')
