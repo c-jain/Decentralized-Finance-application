@@ -1,16 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { ToastContainer } from 'react-toastify';
 import { BrowserRouter, withRouter } from 'react-router-dom';
-import { Drizzle, generateStore } from 'drizzle';
+import { Drizzle } from 'drizzle';
 import { DrizzleContext } from 'drizzle-react';
 
 import options from './drizzleOptions';
+import drizzleStore from './middleware/index'
 
 import './index.css';
+import 'react-toastify/dist/ReactToastify.css'
 import App from './Components/App';
 import * as serviceWorker from './serviceWorker';
 
-const drizzleStore = generateStore(options);
 const drizzle = new Drizzle(options, drizzleStore);
 
 const Main = withRouter(props => ((
@@ -24,6 +26,7 @@ const Main = withRouter(props => ((
 
       return (
         <div>
+            <ToastContainer />
             <App 
               drizzle={drizzle}
               drizzleState={drizzleState}

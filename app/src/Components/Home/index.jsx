@@ -18,7 +18,7 @@ const Home = ({ drizzle, drizzleState, decimal, mint }) => (((
                     <div>
                         <div className="d-lg-flex p-2 bg-light font-weight-bold mt-5 text-secondary">
                             My Address: 
-                            <span className="text-success pl-2">{address}</span>
+                            <span className="text-success pl-2 text-break">{address}</span>
                         </div>
                         <div className="d-lg-flex p-2 bg-light font-weight-bold text-secondary">
                             My Ether:
