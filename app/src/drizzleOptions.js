@@ -1,4 +1,5 @@
 import ZastrinToken from "./contracts/ZastrinToken.json";
+import Bank from "./contracts/Bank.json";
 
 const options = {
   web3: {
@@ -8,7 +9,7 @@ const options = {
       url: "ws://127.0.0.1:8545",
     },
   },
-  contracts: [ZastrinToken],
+  contracts: [ZastrinToken, Bank],
   events: {
     ZastrinToken: ["ZastrinTokenMinted"],
   },
